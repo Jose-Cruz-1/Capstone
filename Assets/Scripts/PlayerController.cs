@@ -20,7 +20,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private int jumpBufferFrames; //sets the max amount of frames the jump buffer input is stored
 
     private float coyoteTimeCounter = 0; //stores the Grounded() bool
-    [SerializeField] private float coyoteTime; ////sets the max amount of frames the Grounded() bool is stored
+    [SerializeField] private float coyoteTime; //sets the max amount of frames the Grounded() bool is stored
 
     private int airJumpCounter = 0; //keeps track of how many times the player has jumped in the air
     [SerializeField] private int maxAirJumps; //the max no. of air jumps
@@ -87,8 +87,8 @@ public class PlayerController : MonoBehaviour
     public int health;
     public int maxHealth;
     [SerializeField] float hitFlashSpeed;
-    public delegate void OnHealthChangedDelegate();
-    [HideInInspector] public OnHealthChangedDelegate onHealthChangedCallback;
+    public delegate void OnHealthChangedDelegate(); // takes care of ALL needs and updates for hearts
+    [HideInInspector] public OnHealthChangedDelegate onHealthChangedCallback; // side note, delegatevoid used because it can easily use multiple methods
 
     float healTimer;
     [SerializeField] float timeToHeal;
@@ -107,8 +107,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField] float manaSpellCost = 0.3f;
     [SerializeField] float timeBetweenCast = 0.5f;
     float timeSinceCast;
-    [SerializeField] float spellDamage; //upspellexplosion and downspellfireball
-    [SerializeField] float downSpellForce; // desolate dive only
+    [SerializeField] float spellDamage; //ups pell explosion and down spell fireball
+    [SerializeField] float downSpellForce; // desolate dive
     //spell cast objects
     [SerializeField] GameObject sideSpellFireball;
     [SerializeField] GameObject upSpellExplosion;
@@ -116,7 +116,7 @@ public class PlayerController : MonoBehaviour
     [Space(5)]
 
 
-    [HideInInspector] public PlayerStateList pState;
+    [HideInInspector] public PlayerStateList pState;// hides certain parts of something from the Inspector
     private Animator anim;
     private Rigidbody2D rb;
     private SpriteRenderer sr;
@@ -209,12 +209,12 @@ public class PlayerController : MonoBehaviour
     {
         if (xAxis < 0)
         {
-            transform.localScale = new Vector2(-5, transform.localScale.y);
+            transform.localScale = new Vector2(-5, transform.localScale.y); // flips the player to the left
             pState.lookingRight = false;
         }
         else if (xAxis > 0)
         {
-            transform.localScale = new Vector2(5, transform.localScale.y);
+            transform.localScale = new Vector2(5, transform.localScale.y); // flips the player to the right
             pState.lookingRight = true;
         }
     }
@@ -233,7 +233,7 @@ public class PlayerController : MonoBehaviour
             dashed = true;
         }
 
-        if (Grounded())
+        if (Grounded()) // refreshes the dash when the player is on the ground
         {
             dashed = false;
         }
@@ -293,12 +293,12 @@ public class PlayerController : MonoBehaviour
         {
             if (objectsToHit[i].GetComponent<Enemy>() != null)
             {
-                objectsToHit[i].GetComponent<Enemy>().EnemyHit
-                    (damage, (transform.position - objectsToHit[i].transform.position).normalized, _recoilStrength);
+                objectsToHit[i].GetComponent<Enemy>().EnemyHit // only is called when an enemy is hit with an attack
+                    (damage, (transform.position - objectsToHit[i].transform.position).normalized, _recoilStrength); // knockback calculation and application
 
                 if (objectsToHit[i].CompareTag("Enemy"))
                 {
-                    Mana += manaGain;
+                    Mana += manaGain; // lets the player gain mana/soul upon hitting an enemy or other source
                 }
             }
         }
@@ -311,7 +311,7 @@ public class PlayerController : MonoBehaviour
     }
     void Recoil()
     {
-        if (pState.recoilingX)
+        if (pState.recoilingX) // determines whther knockback pushes the player to the right or left (in order they appear)
         {
             if (pState.lookingRight)
             {
@@ -323,7 +323,7 @@ public class PlayerController : MonoBehaviour
             }
         }
 
-        if (pState.recoilingY)
+        if (pState.recoilingY) // only knocks the player upward if they hit an enemy from above
         {
             rb.gravityScale = 0;
             if (yAxis < 0)
@@ -334,7 +334,7 @@ public class PlayerController : MonoBehaviour
             {
                 rb.velocity = new Vector2(rb.velocity.x, -recoilYSpeed);
             }
-            airJumpCounter = 0;
+            airJumpCounter = 0; // reset the jump counter upon hitting a downward attack on an enemy from above
         }
         else
         {
@@ -582,7 +582,7 @@ public class PlayerController : MonoBehaviour
 
         if (Input.GetButtonUp("Jump") && rb.velocity.y > 0)
         {
-            rb.velocity = new Vector2(rb.velocity.x, 0);
+            rb.velocity = new Vector2(rb.velocity.x, 3);
 
             pState.jumping = false;
         }
