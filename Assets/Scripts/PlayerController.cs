@@ -106,13 +106,17 @@ public class PlayerController : MonoBehaviour
     //spell stats
     [SerializeField] float manaSpellCost = 0.3f;
     [SerializeField] float timeBetweenCast = 0.5f;
-    float timeSinceCast;
-    [SerializeField] float spellDamage; //ups pell explosion and down spell fireball
+    [SerializeField] float spellDamage; //up spell explosion and down spell fireball
     [SerializeField] float downSpellForce; // desolate dive
+
     //spell cast objects
     [SerializeField] GameObject sideSpellFireball;
     [SerializeField] GameObject upSpellExplosion;
     [SerializeField] GameObject downSpellFireball;
+
+
+    float timeSinceCast;
+    float castOrHealtimer;
     [Space(5)]
 
 
@@ -138,7 +142,7 @@ public class PlayerController : MonoBehaviour
         {
             Instance = this;
         }
-        Health = maxHealth;
+        DontDestroyOnLoad(gameObject);
     }
 
 
@@ -156,6 +160,8 @@ public class PlayerController : MonoBehaviour
 
         Mana = mana;
         manaStorage.fillAmount = Mana;
+
+        Health = maxHealth;
     }
 
     private void OnDrawGizmos()
@@ -203,18 +209,27 @@ public class PlayerController : MonoBehaviour
         xAxis = Input.GetAxisRaw("Horizontal");
         yAxis = Input.GetAxisRaw("Vertical");
         attack = Input.GetButtonDown("Attack");
+
+        if (Input.GetButtonDown("Cast/Heal"))
+        {
+            castOrHealtimer += Time.deltaTime;
+        }
+        else
+        {
+            castOrHealtimer = 0;
+        }
     }
 
     void Flip()
     {
         if (xAxis < 0)
         {
-            transform.localScale = new Vector2(-5, transform.localScale.y); // flips the player to the left
+            transform.localScale = new Vector2(-4, transform.localScale.y); // flips the player to the left
             pState.lookingRight = false;
         }
         else if (xAxis > 0)
         {
-            transform.localScale = new Vector2(5, transform.localScale.y); // flips the player to the right
+            transform.localScale = new Vector2(4, transform.localScale.y); // flips the player to the right
             pState.lookingRight = true;
         }
     }
@@ -245,7 +260,8 @@ public class PlayerController : MonoBehaviour
         pState.dashing = true;
         anim.SetTrigger("Dashing");
         rb.gravityScale = 0;
-        rb.velocity = new Vector2(transform.localScale.x * dashSpeed, 0);
+        int _dir = pState.lookingRight ? 5 : -5;
+        rb.velocity = new Vector2(_dir * dashSpeed, 0);
         //if (Grounded()) Instantiate(dashEffect, transform);
         yield return new WaitForSeconds(dashTime);
         rb.gravityScale = gravity;
@@ -369,16 +385,19 @@ public class PlayerController : MonoBehaviour
         stepsXRecoiled = 0;
         pState.recoilingX = false;
     }
+
     void StopRecoilY()
     {
         stepsYRecoiled = 0;
         pState.recoilingY = false;
     }
+
     public void TakeDamage(float _damage)
     {
         Health -= Mathf.RoundToInt(_damage);
         StartCoroutine(StopTakingDamage());
     }
+
     IEnumerator StopTakingDamage()
     {
         pState.invincible = true;
@@ -386,10 +405,12 @@ public class PlayerController : MonoBehaviour
         yield return new WaitForSeconds(1f);
         pState.invincible = false;
     }
+
     void FlashWhileInvincible()
     {
         sr.material.color = pState.invincible ? Color.Lerp(Color.white, Color.black, Mathf.PingPong(Time.time * hitFlashSpeed, 1.0f)) : Color.white;
     }
+
     void RestoreTimeScale()
     {
         if (restoreTime)
@@ -419,6 +440,7 @@ public class PlayerController : MonoBehaviour
         }
         Time.timeScale = _newTimeScale;
     }
+
     IEnumerator StartTimeAgain(float _delay)
     {
         restoreTime = true;
@@ -442,7 +464,7 @@ public class PlayerController : MonoBehaviour
     }
     void Heal()
     {
-        if (Input.GetButton("Healing") && Health < maxHealth && Mana > 0 && !pState.jumping && !pState.dashing)
+        if (Input.GetButton("Cast/Heal") && castOrHealtimer > 0.05f && Health < maxHealth && Mana > 0 && !pState.jumping && !pState.dashing)
         {
             pState.healing = true;
             anim.SetBool("Healing", true);
@@ -462,7 +484,7 @@ public class PlayerController : MonoBehaviour
         {
             pState.healing = false;
             anim.SetBool("Healing", false);
-            healTimer = 0;
+            healTimer = 0; 
         }
     }
     float Mana
@@ -473,7 +495,7 @@ public class PlayerController : MonoBehaviour
             //if mana stats change
             if (mana != value)
             {
-                mana = Mathf.Clamp(value, 0, 1);
+                mana = Mathf.Clamp(value, 0, 100); //Determines what the maximum mana/soul is. (Minimum, Maximum)
                 manaStorage.fillAmount = Mana;
             }
         }
@@ -481,7 +503,7 @@ public class PlayerController : MonoBehaviour
 
     void CastSpell()
     {
-        if (Input.GetButtonDown("CastSpell") && timeSinceCast >= timeBetweenCast && Mana >= manaSpellCost)
+        if (Input.GetButtonUp("Cast/Heal") && castOrHealtimer <= 0.05f && timeSinceCast >= timeBetweenCast && Mana >= manaSpellCost)
         {
             pState.casting = true;
             timeSinceCast = 0;
@@ -561,30 +583,31 @@ public class PlayerController : MonoBehaviour
 
     void Jump()
     {
-
-        if (!pState.jumping)
+        if (jumpBufferCounter > 0 && coyoteTimeCounter > 0 && !pState.jumping)
         {
-            if (jumpBufferCounter > 0 && coyoteTimeCounter > 0)
-            {
-                rb.velocity = new Vector3(rb.velocity.x, jumpForce);
+            rb.velocity = new Vector3(rb.velocity.x, jumpForce);
 
-                pState.jumping = true;
-            }
-            else if (!Grounded() && airJumpCounter < maxAirJumps && Input.GetButtonDown("Jump"))
-            {
-                pState.jumping = true;
+            pState.jumping = true;
+        }
+        
+        if (!Grounded() && airJumpCounter < maxAirJumps && Input.GetButtonDown("Jump"))
+        {
+            pState.jumping = true;
 
-                airJumpCounter++;
+            airJumpCounter++;
 
-                rb.velocity = new Vector3(rb.velocity.x, jumpForce);
-            }
+            rb.velocity = new Vector3(rb.velocity.x, jumpForce);
         }
 
-        if (Input.GetButtonUp("Jump") && rb.velocity.y > 0)
+        if (Input.GetButtonUp("Jump") && rb.velocity.y > 3)
         {
-            rb.velocity = new Vector2(rb.velocity.x, 3);
+            rb.velocity = new Vector2(rb.velocity.x, 5);
 
             pState.jumping = false;
+
+            anim.SetBool("Jumping", false);
+
+            anim.SetBool("Falling", true);
         }
 
         anim.SetBool("Jumping", !Grounded());

@@ -19,10 +19,6 @@ public class Enemy : MonoBehaviour
     // Start is called before the first frame update
     protected virtual void Start()
     {
-
-    }
-    protected virtual void Awake()
-    {
         rb = GetComponent<Rigidbody2D>();
         player = PlayerController.Instance;
     }
@@ -55,9 +51,9 @@ public class Enemy : MonoBehaviour
             rb.AddForce(-_hitForce * recoilFactor * _hitDirection);
         }
     }
-    protected void OnTriggerStay2D(Collider2D _other)
+    protected void OnCollision2D(Collider2D _other)
     {
-        if (_other.CompareTag("Player") && !PlayerController.Instance.pState.invincible)
+        if (_other.gameObject.CompareTag("Player") && !PlayerController.Instance.pState.invincible)
         {
             Attack();
         }

@@ -5,13 +5,10 @@ using UnityEngine;
 public class Walker : Enemy
 {
     // Start is called before the first frame update
-    private void Start()
+    protected override void Start()
     {
-        rb.gravityScale = 12f;        
-    }
-    protected override void Awake()
-    {
-        base.Awake();
+        base.Start();
+        rb.gravityScale = 12f;
     }
 
     // Update is called once per frame
